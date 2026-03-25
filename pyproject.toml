@@ -8,7 +8,7 @@ license = {text = "Apache-2.0"}
 Repository = "https://github.com/alisson-anjos/ComfyUI-EffectErase"
 
 [tool.comfy]
-PublisherId = "comfyui-effecterase"
+PublisherId = "alisson-anjos"
 DisplayName = "ComfyUI-EffectErase"
 Icon = ""
 includes = []
