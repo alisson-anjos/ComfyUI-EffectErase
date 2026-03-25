@@ -1,7 +1,8 @@
 [project]
 name = "effecterase-node"
 description = "ComfyUI Interface for FudanCVL EffectErase"
-version = "1.0.1"
+version = "1.0.2"
+license = {text = "Apache-2.0"}
 
 [project.urls]
 Repository = "https://github.com/alisson-anjos/ComfyUI-EffectErase"

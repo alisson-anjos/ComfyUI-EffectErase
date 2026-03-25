@@ -116,7 +116,7 @@ class Canvas:
         code_content = matched.group(1)
         assert 'canvas = Canvas()' in code_content, 'Code block must include valid canvas var!'
         local_vars = {'Canvas': Canvas}
-        exec(code_content, {}, local_vars)
+        raise NotImplementedError("Omost canvas execution is disabled for ComfyUI Registry security compliance.")
         canvas = local_vars.get('canvas', None)
         assert isinstance(canvas, Canvas), 'Code block must produce valid canvas var!'
         return canvas
