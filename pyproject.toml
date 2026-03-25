@@ -1,10 +1,10 @@
 [project]
 name = "effecterase-node"
 description = "ComfyUI Interface for FudanCVL EffectErase"
-version = "1.0.0"
+version = "1.0.1"
 
 [project.urls]
-Repository = "https://github.com/YourUsername/ComfyUI-EffectErase"
+Repository = "https://github.com/alisson-anjos/ComfyUI-EffectErase"
 
 [tool.comfy]
 PublisherId = "comfyui-effecterase"
