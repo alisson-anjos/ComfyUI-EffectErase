@@ -156,6 +156,11 @@ class EffectEraseObjectRemoval:
     def process(self, video_fg_bg, video_mask, remove_prompt, negative_prompt, num_inference_steps, cfg, sigma_shift, accel_lora, accel_lora_strength, dtype, vram_mode, keep_model_loaded, seed, tiled):
         global GLOBAL_CACHE
         
+        dtype_map = {
+            "fp16": torch.float16,
+            "bfloat16": torch.bfloat16,
+        }
+
         if GLOBAL_CACHE.get("pipe") is not None and \
            GLOBAL_CACHE.get("current_lora") == accel_lora and \
            GLOBAL_CACHE.get("current_lora_strength") == accel_lora_strength and \
@@ -177,10 +182,6 @@ class EffectEraseObjectRemoval:
             dit_path = os.path.join(wan_path, "diffusion_pytorch_model.safetensors")
             image_encoder_path = os.path.join(wan_path, "models_clip_open-clip-xlm-roberta-large-vit-huge-14.pth")
 
-            dtype_map = {
-                "fp16": torch.float16,
-                "bfloat16": torch.bfloat16,
-            }
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
             model_manager = ModelManager(device=device)
             model_manager.load_models(
