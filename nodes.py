@@ -253,7 +253,8 @@ class EffectEraseObjectRemoval:
                 num_frames=T,
             )
 
-        out_tensor = torch.from_numpy(np.array(remove_video_frames)).float() / 255.0
+        frames_np = np.stack([np.array(f) for f in remove_video_frames], axis=0)
+        out_tensor = torch.from_numpy(frames_np).float() / 255.0
         
         if keep_model_loaded:
             GLOBAL_CACHE["pipe"] = pipe
