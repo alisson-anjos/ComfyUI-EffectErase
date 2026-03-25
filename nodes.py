@@ -204,13 +204,19 @@ class EffectEraseObjectRemoval:
             if vram_mode == "low_vram":
                 pipe.enable_vram_management(num_persistent_param_in_dit=6 * 10**9)
 
-        fg_bg_first_np = (video_fg_bg[0].cpu().numpy() * 255).astype(np.uint8)
+        first_valid_idx = 0
+        for i in range(len(video_mask)):
+            if video_mask[i].max() > 0.05:
+                first_valid_idx = i
+                break
+
+        fg_bg_first_np = (video_fg_bg[first_valid_idx].cpu().numpy() * 255).astype(np.uint8)
         fg_bg_first_pil = Image.fromarray(fg_bg_first_np)
 
         if len(video_mask.shape) == 3: # [T, H, W]
-            mask_first_np = (video_mask[0].cpu().numpy() * 255).astype(np.uint8)
+            mask_first_np = (video_mask[first_valid_idx].cpu().numpy() * 255).astype(np.uint8)
         else:
-            mask_first_np = (video_mask[0, ..., 0].cpu().numpy() * 255).astype(np.uint8)
+            mask_first_np = (video_mask[first_valid_idx, ..., 0].cpu().numpy() * 255).astype(np.uint8)
         mask_first_pil = Image.fromarray(mask_first_np, mode="L")
 
         fg_first_img = crop_square_from_pil(mask_first_pil, fg_bg_first_pil, target_size=224)
@@ -225,7 +231,8 @@ class EffectEraseObjectRemoval:
             mask_tensor = video_mask.repeat(1, 1, 1, 3).permute(0, 3, 1, 2)
         
         mask_imgs_tensor = mask_tensor.permute(1, 0, 2, 3).float() # [3, T, H, W]
-        mask_imgs_tensor = (mask_imgs_tensor > 0.5).float()
+        if mask_imgs_tensor.shape[2:] != fg_bg_imgs_tensor.shape[2:]:
+            mask_imgs_tensor = F.interpolate(mask_imgs_tensor, size=(H, W), mode="bilinear", align_corners=False)
         mask_imgs_tensor = mask_imgs_tensor * 2.0 - 1.0
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
