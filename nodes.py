@@ -123,7 +123,7 @@ class EffectEraseObjectRemoval:
                 "sigma_shift": ("FLOAT", {"default": 5.0, "min": 1.0, "max": 15.0, "step": 0.5}),
                 "accel_lora": (["none"] + folder_paths.get_filename_list("loras"), ),
                 "accel_lora_strength": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 5.0, "step": 0.05}),
-                "dtype": (["bfloat16", "fp16", "fp8_e4m3fn"], {"default": "bfloat16"}),
+                "dtype": (["bfloat16", "fp16"], {"default": "bfloat16"}),
                 "vram_mode": (["low_vram", "high_vram"], {"default": "low_vram"}),
                 "keep_model_loaded": ("BOOLEAN", {"default": True}),
                 "seed": ("INT", {"default": 42, "min": 0, "max": 0xffffffffffffffff}),
@@ -180,7 +180,6 @@ class EffectEraseObjectRemoval:
             dtype_map = {
                 "fp16": torch.float16,
                 "bfloat16": torch.bfloat16,
-                "fp8_e4m3fn": torch.float8_e4m3fn,
             }
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
             model_manager = ModelManager(device=device)
