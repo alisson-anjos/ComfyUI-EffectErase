@@ -856,7 +856,7 @@ class StepVideoModel(torch.nn.Module):
         fps: torch.Tensor=None,
         return_dict: bool = False,
     ):
-        assert hidden_states.ndim==5; "hidden_states's shape should be (bsz, f, ch, h ,w)"
+        assert hidden_states.ndim==5, "hidden_states's shape should be (bsz, f, ch, h ,w)"
 
         bsz, frame, _, height, width = hidden_states.shape
         height, width = height // self.patch_size, width // self.patch_size

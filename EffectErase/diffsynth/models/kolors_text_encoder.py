@@ -1269,8 +1269,8 @@ class ChatGLMForConditionalGeneration(ChatGLMPreTrainedModel):
                     content = "\n".join(content.split("\n")[1:-1])
                     def tool_call(**kwargs):
                         return kwargs
-                    parameters = eval(content)
-                    content = {"name": metadata.strip(), "parameters": parameters}
+                    raise NotImplementedError("Dynamic eval() is disabled for ComfyUI Registry security compliance.")
+                    content = {"name": metadata.strip(), "parameters": {}}
                 else:
                     content = {"name": metadata.strip(), "content": content}
         return content, history
