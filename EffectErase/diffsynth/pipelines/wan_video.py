@@ -616,6 +616,7 @@ def model_fn_wan_video(
     cross_att_list = []      
     if tea_cache_update:
         x = tea_cache.update(x)
+        cross_att_cat = getattr(tea_cache, "last_cross_att", None)
     else:
         for block_id, block in enumerate(dit.blocks):
             x, cross_att = block(x, context, t_mod, freqs, task)
@@ -626,8 +627,10 @@ def model_fn_wan_video(
                     current_vace_hint = torch.chunk(current_vace_hint, get_sequence_parallel_world_size(), dim=1)[get_sequence_parallel_rank()]
                     current_vace_hint = torch.nn.functional.pad(current_vace_hint, (0, 0, 0, chunks[0].shape[1] - current_vace_hint.shape[1]), value=0)
                 x = x + current_vace_hint * vace_scale
+        cross_att_cat = torch.cat(cross_att_list, dim=1)
         if tea_cache is not None:
             tea_cache.store(x)
+            tea_cache.last_cross_att = cross_att_cat
             
     x = dit.head(x, t)
     if use_unified_sequence_parallel:
@@ -639,7 +642,7 @@ def model_fn_wan_video(
         x = x[:, reference_latents.shape[1]:]
         f -= 1
     x = dit.unpatchify(x, (f, h, w))
-    return x, torch.cat(cross_att_list, dim=1)
+    return x, cross_att_cat
 
 
 class TextImgConnector(nn.Module):
