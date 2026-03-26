@@ -123,6 +123,7 @@ class EffectEraseObjectRemoval:
                 "sigma_shift": ("FLOAT", {"default": 5.0, "min": 1.0, "max": 15.0, "step": 0.5}),
                 "accel_lora": (["none"] + folder_paths.get_filename_list("loras"), ),
                 "accel_lora_strength": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 5.0, "step": 0.05}),
+                "erase_lora_strength": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 5.0, "step": 0.05}),
                 "dtype": (["bfloat16", "fp16"], {"default": "bfloat16"}),
                 "vram_mode": (["low_vram", "high_vram"], {"default": "low_vram"}),
                 "keep_model_loaded": ("BOOLEAN", {"default": True}),
@@ -154,7 +155,7 @@ class EffectEraseObjectRemoval:
             
         return wan_path, lora_ckpt
 
-    def process(self, video_fg_bg, video_mask, remove_prompt, negative_prompt, num_inference_steps, cfg, sigma_shift, accel_lora, accel_lora_strength, dtype, vram_mode, keep_model_loaded, use_teacache, seed, tiled):
+    def process(self, video_fg_bg, video_mask, remove_prompt, negative_prompt, num_inference_steps, cfg, sigma_shift, accel_lora, accel_lora_strength, erase_lora_strength, dtype, vram_mode, keep_model_loaded, use_teacache, seed, tiled):
         global GLOBAL_CACHE
         
         dtype_map = {
@@ -165,6 +166,7 @@ class EffectEraseObjectRemoval:
         if GLOBAL_CACHE.get("pipe") is not None and \
            GLOBAL_CACHE.get("current_lora") == accel_lora and \
            GLOBAL_CACHE.get("current_lora_strength") == accel_lora_strength and \
+           GLOBAL_CACHE.get("current_erase_lora_strength") == erase_lora_strength and \
            GLOBAL_CACHE.get("current_dtype") == dtype and \
            GLOBAL_CACHE.get("current_vram") == vram_mode and keep_model_loaded:
             print("[EffectErase] Reusing cached model pipeline...")
@@ -194,7 +196,7 @@ class EffectEraseObjectRemoval:
                 ],
                 torch_dtype=dtype_map[dtype],
             )
-            model_manager.load_lora_v2(lora_ckpt, lora_alpha=1.0)
+            model_manager.load_lora_v2(lora_ckpt, lora_alpha=erase_lora_strength)
             
             if accel_lora != "none":
                 accel_lora_path = folder_paths.get_full_path("loras", accel_lora)
@@ -270,6 +272,7 @@ class EffectEraseObjectRemoval:
             GLOBAL_CACHE["pipe"] = pipe
             GLOBAL_CACHE["current_lora"] = accel_lora
             GLOBAL_CACHE["current_lora_strength"] = accel_lora_strength
+            GLOBAL_CACHE["current_erase_lora_strength"] = erase_lora_strength
             GLOBAL_CACHE["current_dtype"] = dtype
             GLOBAL_CACHE["current_vram"] = vram_mode
         else:
