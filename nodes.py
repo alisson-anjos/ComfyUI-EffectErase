@@ -203,7 +203,11 @@ class EffectEraseObjectRemoval:
                 print(f"[EffectErase] Loading acceleration LoRA from file: {accel_lora_path} with strength {accel_lora_strength}")
                 model_manager.load_lora_v2(accel_lora_path, lora_alpha=accel_lora_strength)
 
-            pipe = WanRemovePipeline.from_model_manager(model_manager)
+            pipe = WanRemovePipeline.from_model_manager(
+                model_manager,
+                torch_dtype=dtype_map[dtype],
+                device=device,
+            )
             if vram_mode == "low_vram":
                 pipe.enable_vram_management(num_persistent_param_in_dit=6 * 10**9)
 
