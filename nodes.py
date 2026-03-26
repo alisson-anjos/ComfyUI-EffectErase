@@ -119,13 +119,14 @@ class EffectEraseObjectRemoval:
                 "remove_prompt": ("STRING", {"multiline": True, "default": "Remove the specified object and all related effects, then restore a clean background."}),
                 "negative_prompt": ("STRING", {"multiline": True, "default": "细节模糊不清，字幕，作品，画作，画面，静止，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，杂乱的背景，三条腿，背景人很多，倒着走"}),
                 "num_inference_steps": ("INT", {"default": 50, "min": 1, "max": 200}),
-                "cfg": ("FLOAT", {"default": 5.0, "min": 1.0, "max": 20.0, "step": 0.5}),
+                "cfg": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 20.0, "step": 0.5}),
                 "sigma_shift": ("FLOAT", {"default": 5.0, "min": 1.0, "max": 15.0, "step": 0.5}),
                 "accel_lora": (["none"] + folder_paths.get_filename_list("loras"), ),
                 "accel_lora_strength": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 5.0, "step": 0.05}),
                 "dtype": (["bfloat16", "fp16"], {"default": "bfloat16"}),
                 "vram_mode": (["low_vram", "high_vram"], {"default": "low_vram"}),
                 "keep_model_loaded": ("BOOLEAN", {"default": True}),
+                "use_teacache": ("BOOLEAN", {"default": True}),
                 "seed": ("INT", {"default": 42, "min": 0, "max": 0xffffffffffffffff}),
                 "tiled": ("BOOLEAN", {"default": True}),
             }
@@ -153,7 +154,7 @@ class EffectEraseObjectRemoval:
             
         return wan_path, lora_ckpt
 
-    def process(self, video_fg_bg, video_mask, remove_prompt, negative_prompt, num_inference_steps, cfg, sigma_shift, accel_lora, accel_lora_strength, dtype, vram_mode, keep_model_loaded, seed, tiled):
+    def process(self, video_fg_bg, video_mask, remove_prompt, negative_prompt, num_inference_steps, cfg, sigma_shift, accel_lora, accel_lora_strength, dtype, vram_mode, keep_model_loaded, use_teacache, seed, tiled):
         global GLOBAL_CACHE
         
         dtype_map = {
@@ -258,6 +259,8 @@ class EffectEraseObjectRemoval:
                 height=H,
                 width=W,
                 num_frames=T,
+                tea_cache_l1_thresh=0.3 if use_teacache else None,
+                tea_cache_model_id="Wan2.1-T2V-1.3B" if use_teacache else None,
             )
 
         frames_np = np.stack([np.array(f) for f in remove_video_frames], axis=0)
