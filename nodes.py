@@ -6,6 +6,7 @@ import numpy as np
 from PIL import Image
 import copy
 import gc
+import cv2
 
 import folder_paths
 import subprocess
@@ -287,10 +288,72 @@ class EffectEraseObjectRemoval:
 
         return (out_tensor,)
 
+class VideoDifferenceMaskNode:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "video_with_object": ("IMAGE",),
+                "video_without_object": ("IMAGE",),
+                "threshold": ("FLOAT", {"default": 0.15, "min": 0.01, "max": 1.0, "step": 0.01}),
+                "noise_radius": ("INT", {"default": 5, "min": 0, "max": 50, "step": 1}),
+                "min_area": ("INT", {"default": 500, "min": 0, "max": 100000, "step": 50}),
+            }
+        }
+
+    RETURN_TYPES = ("MASK",)
+    RETURN_NAMES = ("mask",)
+    FUNCTION = "process"
+    CATEGORY = "EffectErase/Utils"
+
+    def process(self, video_with_object, video_without_object, threshold, noise_radius, min_area):
+        T1, H1, W1, C1 = video_with_object.shape
+        T2, H2, W2, C2 = video_without_object.shape
+        T = min(T1, T2)
+        H = min(H1, H2)
+        W = min(W1, W2)
+
+        v1 = video_with_object[:T, :H, :W, :].cpu().numpy()
+        v2 = video_without_object[:T, :H, :W, :].cpu().numpy()
+
+        diff = np.abs(v1 - v2)
+        
+        if diff.shape[-1] == 3:
+            diff_gray = np.mean(diff, axis=-1)
+        else:
+            diff_gray = diff[..., 0]
+
+        mask = (diff_gray > threshold).astype(np.uint8)
+
+        final_masks = []
+        for i in range(T):
+            frame_mask = mask[i]
+            
+            if noise_radius > 0:
+                kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (noise_radius, noise_radius))
+                frame_mask = cv2.morphologyEx(frame_mask, cv2.MORPH_OPEN, kernel)
+                kernel_close = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (noise_radius*2, noise_radius*2))
+                frame_mask = cv2.morphologyEx(frame_mask, cv2.MORPH_CLOSE, kernel_close)
+            
+            if min_area > 0:
+                num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(frame_mask, connectivity=8)
+                new_mask = np.zeros_like(frame_mask)
+                for label in range(1, num_labels):
+                    if stats[label, cv2.CC_STAT_AREA] >= min_area:
+                        new_mask[labels == label] = 1
+                frame_mask = new_mask
+
+            final_masks.append(frame_mask.astype(np.float32))
+
+        out_mask = torch.from_numpy(np.array(final_masks)).float()
+        return (out_mask,)
+
 NODE_CLASS_MAPPINGS = {
-    "EffectEraseNode": EffectEraseObjectRemoval
+    "EffectEraseNode": EffectEraseObjectRemoval,
+    "VideoDifferenceMaskNode": VideoDifferenceMaskNode
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "EffectEraseNode": "EffectErase Object Removal"
+    "EffectEraseNode": "EffectErase Object Removal",
+    "VideoDifferenceMaskNode": "Video Difference Mask"
 }
